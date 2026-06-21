@@ -1,0 +1,42 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: service-kanban
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/kanta_kanban}
+    username: ${DB_USERNAME:kanta}
+    password: ${DB_PASSWORD:kanta}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:service-kanban}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+
+server:
+  port: ${SERVER_PORT:8081}
+
+kanta:
+  kafka:
+    topics:
+      card-events: ${KAFKA_TOPIC_CARD_EVENTS:card.events}
+      member-updated: ${KAFKA_TOPIC_MEMBER_UPDATED:member.updated}
+  outbox:
+    publisher-enabled: ${OUTBOX_PUBLISHER_ENABLED:true}
+    poll-size: ${OUTBOX_POLL_SIZE:50}
+    poll-delay-ms: ${OUTBOX_POLL_DELAY_MS:5000}
