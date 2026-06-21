@@ -122,5 +122,25 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8080/api/auth/oauth/google/callback}
 
+  service-gateway:
+    build:
+      context: .
+      args:
+        MODULE: service-gateway
+    container_name: kanta-service-gateway
+    restart: unless-stopped
+    depends_on:
+      - service-kanban
+      - service-user
+      - service-auth
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_PORT: 8080
+      AUTH_SERVICE_URL: http://service-auth:8083
+      USER_SERVICE_URL: http://service-user:8082
+      KANBAN_SERVICE_URL: http://service-kanban:8081
+      INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET:-change-me-internal-gateway-secret}
+
 volumes:
   kanta-postgres-data:
