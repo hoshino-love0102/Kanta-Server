@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package com.kanta.auth.grpc;
+
+option java_package = "com.kanta.auth.grpc";
+option java_multiple_files = true;
+
+service AuthInternalService {
+  rpc ListOAuthAccounts(ListOAuthAccountsRequest) returns (ListOAuthAccountsResponse);
+}
+
+message ListOAuthAccountsRequest {
+  string user_id = 1;
+}
+
+message OAuthAccountView {
+  string provider = 1;
+  string linked_at = 2;
+}
+
+message ListOAuthAccountsResponse {
+  repeated OAuthAccountView accounts = 1;
+}
