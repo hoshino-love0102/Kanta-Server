@@ -1,0 +1,49 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: service-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-oauth
+          uri: ${AUTH_SERVICE_URL:http://service-auth:8083}
+          predicates:
+            - Path=/api/auth/oauth/**
+          filters:
+            - StripPrefix=1
+        - id: auth-token
+          uri: ${AUTH_SERVICE_URL:http://service-auth:8083}
+          predicates:
+            - Path=/api/auth/token/**,/api/auth/logout
+          filters:
+            - StripPrefix=1
+        - id: user-service
+          uri: ${USER_SERVICE_URL:http://service-user:8082}
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=1
+            - PassportExchange
+        - id: kanban-boards
+          uri: ${KANBAN_SERVICE_URL:http://service-kanban:8081}
+          predicates:
+            - Path=/api/boards/**
+          filters:
+            - StripPrefix=1
+            - PassportExchange
+        - id: kanban-cards
+          uri: ${KANBAN_SERVICE_URL:http://service-kanban:8081}
+          predicates:
+            - Path=/api/cards/**
+          filters:
+            - StripPrefix=1
+            - PassportExchange
+
+server:
+  port: ${SERVER_PORT:8080}
+
+kanta:
+  gateway:
+    auth-service-url: ${AUTH_SERVICE_URL:http://service-auth:8083}
+    internal-secret: ${INTERNAL_GATEWAY_SECRET:change-me-internal-gateway-secret}
