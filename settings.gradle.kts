@@ -15,3 +15,5 @@ dependencyResolutionManagement {
 rootProject.name = "kanta-server"
 
 include("service-kanban")
+include("service-user")
+include("service-auth")
