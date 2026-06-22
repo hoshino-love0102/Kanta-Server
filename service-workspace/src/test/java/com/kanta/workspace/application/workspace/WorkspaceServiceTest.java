@@ -16,6 +16,7 @@ import com.kanta.workspace.domain.workspace.entity.Workspace;
 import com.kanta.workspace.domain.workspace.entity.WorkspaceMember;
 import com.kanta.workspace.domain.workspace.enumeration.MemberRole;
 import com.kanta.workspace.domain.workspace.enumeration.MemberStatus;
+import com.kanta.workspace.domain.workspace.repository.RepoBoardMappingRepository;
 import com.kanta.workspace.domain.workspace.repository.WorkspaceMemberRepository;
 import com.kanta.workspace.domain.workspace.repository.WorkspaceRepository;
 import com.kanta.workspace.infrastructure.security.Passport;
@@ -42,6 +43,9 @@ class WorkspaceServiceTest {
     private WorkspaceMemberRepository workspaceMemberRepository;
 
     @Mock
+    private RepoBoardMappingRepository repoBoardMappingRepository;
+
+    @Mock
     private OutboxEventWriter outboxEventWriter;
 
     private WorkspaceService workspaceService;
@@ -50,7 +54,9 @@ class WorkspaceServiceTest {
 
     @BeforeEach
     void setUp() {
-        workspaceService = new WorkspaceService(workspaceRepository, workspaceMemberRepository, outboxEventWriter);
+        workspaceService = new WorkspaceService(
+            workspaceRepository, workspaceMemberRepository, repoBoardMappingRepository, outboxEventWriter
+        );
         lenient().when(workspaceRepository.findById(workspaceId))
             .thenReturn(Optional.of(new Workspace("워크스페이스", null)));
     }
