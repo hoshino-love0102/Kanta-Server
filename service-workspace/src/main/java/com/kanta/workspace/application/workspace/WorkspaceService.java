@@ -215,7 +215,7 @@ public class WorkspaceService {
         outboxEventWriter.append(
             "WORKSPACE_MEMBER",
             member.getId(),
-            "member.updated",
+            "member.removed",
             Map.of(
                 "workspaceMemberId", member.getId(),
                 "workspaceId", member.getWorkspaceId(),
