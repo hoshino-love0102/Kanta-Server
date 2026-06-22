@@ -40,8 +40,15 @@ public class RestKanbanCardClient implements KanbanCardClient {
             })
             .body(JsonNode.class);
 
-        var cardId = response.path("data").path("id").asText();
-        return UUID.fromString(cardId);
+        var cardIdNode = response == null ? null : response.path("data").path("id");
+        if (cardIdNode == null || !cardIdNode.isTextual()) {
+            throw new BadRequestException("칸반 카드 생성 응답이 올바르지 않습니다.", "KANBAN_CARD_CREATE_FAILED");
+        }
+        try {
+            return UUID.fromString(cardIdNode.asText());
+        } catch (IllegalArgumentException exception) {
+            throw new BadRequestException("칸반 카드 생성 응답이 올바르지 않습니다.", "KANBAN_CARD_CREATE_FAILED");
+        }
     }
 
     private String buildPassportHeader() {
