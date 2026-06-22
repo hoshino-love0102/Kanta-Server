@@ -1,0 +1,26 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: service-websocket-hub
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:service-websocket-hub}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+server:
+  port: ${SERVER_PORT:8087}
+
+kanta:
+  kafka:
+    topics:
+      card-events: ${KAFKA_TOPIC_CARD_EVENTS:card.events}
+  client:
+    auth-service-url: ${AUTH_SERVICE_URL:http://service-auth:8083}
+    kanban-service-url: ${KANBAN_SERVICE_URL:http://service-kanban:8081}
+    workspace-service-url: ${WORKSPACE_SERVICE_URL:http://service-workspace:8084}
+  internal:
+    gateway-secret: ${INTERNAL_GATEWAY_SECRET:change-me-internal-gateway-secret}
