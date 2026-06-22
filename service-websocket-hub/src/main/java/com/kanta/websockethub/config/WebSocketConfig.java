@@ -1,6 +1,7 @@
 package com.kanta.websockethub.config;
 
 import com.kanta.websockethub.security.StompAuthChannelInterceptor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -12,15 +13,20 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final StompAuthChannelInterceptor stompAuthChannelInterceptor;
+    private final String[] allowedOriginPatterns;
 
-    public WebSocketConfig(StompAuthChannelInterceptor stompAuthChannelInterceptor) {
+    public WebSocketConfig(
+        StompAuthChannelInterceptor stompAuthChannelInterceptor,
+        @Value("${kanta.websocket.allowed-origin-patterns}") String[] allowedOriginPatterns
+    ) {
         this.stompAuthChannelInterceptor = stompAuthChannelInterceptor;
+        this.allowedOriginPatterns = allowedOriginPatterns;
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-            .setAllowedOriginPatterns("*")
+            .setAllowedOriginPatterns(allowedOriginPatterns)
             .withSockJS();
     }
 
