@@ -145,6 +145,18 @@ services:
       KAFKA_CONSUMER_GROUP_ID: service-workspace
       SERVER_PORT: 8084
 
+  service-ai:
+    build:
+      context: ../Kanta-AI
+    container_name: kanta-service-ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      APP_ENV: ${AI_APP_ENV:-local}
+
   service-meeting:
     build:
       context: .
@@ -159,6 +171,8 @@ services:
         condition: service_started
       service-kanban:
         condition: service_started
+      service-ai:
+        condition: service_started
     ports:
       - "8085:8085"
     environment:
@@ -169,6 +183,7 @@ services:
       KAFKA_CONSUMER_GROUP_ID: service-meeting
       SERVER_PORT: 8085
       KANBAN_SERVICE_URL: http://service-kanban:8081
+      AI_SERVICE_URL: http://service-ai:8000
 
   service-github:
     build:
@@ -186,6 +201,8 @@ services:
         condition: service_started
       service-workspace:
         condition: service_started
+      service-ai:
+        condition: service_started
     ports:
       - "8086:8086"
     environment:
@@ -197,6 +214,7 @@ services:
       SERVER_PORT: 8086
       KANBAN_SERVICE_URL: http://service-kanban:8081
       WORKSPACE_SERVICE_URL: http://service-workspace:8084
+      AI_SERVICE_URL: http://service-ai:8000
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-change-me-github-webhook-secret}
 
   service-gateway:
