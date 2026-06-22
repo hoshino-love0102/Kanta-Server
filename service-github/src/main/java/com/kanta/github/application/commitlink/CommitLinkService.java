@@ -1,7 +1,7 @@
 package com.kanta.github.application.commitlink;
 
 import com.kanta.github.application.outbox.OutboxEventWriter;
-import com.kanta.github.common.BadRequestException;
+import com.kanta.github.common.ConflictException;
 import com.kanta.github.common.NotFoundException;
 import com.kanta.github.domain.commitlink.entity.CommitCardLink;
 import com.kanta.github.domain.commitlink.enumeration.MatchStatus;
@@ -56,7 +56,7 @@ public class CommitLinkService {
         var link = commitCardLinkRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("커밋-카드 연결 후보를 찾을 수 없습니다.", "COMMIT_LINK_NOT_FOUND"));
         if (link.getMatchStatus() != MatchStatus.PENDING_CONFIRMATION) {
-            throw new BadRequestException("이미 처리된 후보입니다.", "COMMIT_LINK_ALREADY_PROCESSED");
+            throw new ConflictException("이미 처리된 후보입니다.", "COMMIT_LINK_ALREADY_RESOLVED");
         }
         return link;
     }
