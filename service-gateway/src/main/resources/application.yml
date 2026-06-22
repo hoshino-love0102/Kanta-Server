@@ -39,6 +39,13 @@ spring:
           filters:
             - StripPrefix=1
             - PassportExchange
+        - id: workspace-service
+          uri: ${WORKSPACE_SERVICE_URL:http://service-workspace:8084}
+          predicates:
+            - Path=/api/workspaces/**
+          filters:
+            - StripPrefix=1
+            - PassportExchange
 
 server:
   port: ${SERVER_PORT:8080}
