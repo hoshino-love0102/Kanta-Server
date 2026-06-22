@@ -33,7 +33,10 @@ public class OutboxPublisher {
     @Scheduled(fixedDelayString = "${kanta.outbox.poll-delay-ms}")
     @Transactional
     public void publishPendingEvents() {
-        var events = outboxEventRepository.findByPublishedAtIsNullOrderByOccurredAtAsc(PageRequest.of(0, pollSize));
+        var events = outboxEventRepository.findByEventTypeAndPublishedAtIsNullOrderByOccurredAtAsc(
+            "commit.matched",
+            PageRequest.of(0, pollSize)
+        );
 
         for (var event : events) {
             try {
