@@ -1,6 +1,8 @@
 package com.kanta.meeting.infrastructure.ai;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.kanta.meeting.domain.meeting.AiMeetingSummarizer;
 import com.kanta.meeting.domain.meeting.MeetingSummarizationResult;
 import com.kanta.meeting.domain.meeting.MeetingSummarizationResult.ActionItemCandidateDraft;
@@ -38,6 +40,7 @@ public class RestAiMeetingSummarizer implements AiMeetingSummarizer {
         }
     }
 
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     private record AiMeetingRequest(
         String meetingNoteId,
         String boardId,
@@ -57,6 +60,7 @@ public class RestAiMeetingSummarizer implements AiMeetingSummarizer {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     private record AiMeetingResponse(String summary, List<AiActionItem> actionItems) {
         private MeetingSummarizationResult toResult() {
             var candidates = actionItems == null ? List.<ActionItemCandidateDraft>of() : actionItems.stream()
@@ -67,6 +71,7 @@ public class RestAiMeetingSummarizer implements AiMeetingSummarizer {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     private record AiActionItem(String title, String assigneeName, String dueDate) {
     }
 }

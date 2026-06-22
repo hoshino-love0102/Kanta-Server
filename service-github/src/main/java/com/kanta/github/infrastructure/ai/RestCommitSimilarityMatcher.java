@@ -1,6 +1,8 @@
 package com.kanta.github.infrastructure.ai;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.kanta.github.domain.commitlink.CommitSimilarityMatcher;
 import com.kanta.github.domain.kanban.CardMatch;
 import com.kanta.github.domain.kanban.KanbanCardFinder;
@@ -52,6 +54,7 @@ public class RestCommitSimilarityMatcher implements CommitSimilarityMatcher {
         }
     }
 
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     private record AiCommitMatchRequest(
         String boardId,
         String commitSha,
@@ -60,6 +63,7 @@ public class RestCommitSimilarityMatcher implements CommitSimilarityMatcher {
     ) {
     }
 
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     private record AiCardCandidate(String cardId, String title, String description) {
         private static AiCardCandidate from(CardMatch card) {
             return new AiCardCandidate(card.id().toString(), card.title(), null);
@@ -67,10 +71,12 @@ public class RestCommitSimilarityMatcher implements CommitSimilarityMatcher {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     private record AiCommitMatchResponse(List<AiCommitMatch> matches) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     private record AiCommitMatch(String cardId, String title, double score, String reason) {
     }
 }
