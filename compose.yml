@@ -217,6 +217,33 @@ services:
       AI_SERVICE_URL: http://service-ai:8000
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-change-me-github-webhook-secret}
 
+  service-websocket-hub:
+    build:
+      context: .
+      args:
+        MODULE: service-websocket-hub
+    container_name: kanta-service-websocket-hub
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_started
+      service-auth:
+        condition: service_started
+      service-kanban:
+        condition: service_started
+      service-workspace:
+        condition: service_started
+    expose:
+      - "8087"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_CONSUMER_GROUP_ID: service-websocket-hub
+      SERVER_PORT: 8087
+      AUTH_SERVICE_URL: http://service-auth:8083
+      KANBAN_SERVICE_URL: http://service-kanban:8081
+      WORKSPACE_SERVICE_URL: http://service-workspace:8084
+      INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET:-change-me-internal-gateway-secret}
+
   service-gateway:
     build:
       context: .
@@ -231,6 +258,7 @@ services:
       - service-workspace
       - service-meeting
       - service-github
+      - service-websocket-hub
     ports:
       - "8080:8080"
     environment:
@@ -241,6 +269,7 @@ services:
       WORKSPACE_SERVICE_URL: http://service-workspace:8084
       MEETING_SERVICE_URL: http://service-meeting:8085
       GITHUB_SERVICE_URL: http://service-github:8086
+      WEBSOCKET_HUB_SERVICE_URL: http://service-websocket-hub:8087
       INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET:-change-me-internal-gateway-secret}
 
 volumes:
