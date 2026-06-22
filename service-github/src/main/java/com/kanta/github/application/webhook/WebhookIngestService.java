@@ -64,6 +64,11 @@ public class WebhookIngestService {
 
     @Transactional
     public void ingestPush(String rawBody, String signatureHeader, String deliveryId, String eventType) {
+        ingestPush(rawBody, signatureHeader, deliveryId, eventType, false);
+    }
+
+    @Transactional
+    public void ingestPush(String rawBody, String signatureHeader, String deliveryId, String eventType, boolean deferSimilarityMatching) {
         if (!signatureVerifier.verify(rawBody, signatureHeader)) {
             throw new DomainException(HttpStatus.UNAUTHORIZED, "GitHub 서명 검증에 실패했습니다.", "INVALID_SIGNATURE");
         }
@@ -92,11 +97,11 @@ public class WebhookIngestService {
         }
 
         for (var commitNode : payload.path("commits")) {
-            processCommit(mapping.boardId(), commitNode, ref);
+            processCommit(mapping.boardId(), commitNode, ref, deferSimilarityMatching);
         }
     }
 
-    private void processCommit(UUID boardId, JsonNode commitNode, String ref) {
+    private void processCommit(UUID boardId, JsonNode commitNode, String ref, boolean deferSimilarityMatching) {
         var commitSha = commitNode.path("id").asText(null);
         var commitMessage = commitNode.path("message").asText("");
         if (commitSha == null) {
@@ -117,6 +122,11 @@ public class WebhookIngestService {
             return;
         }
 
+        if (deferSimilarityMatching) {
+            appendDeferredSimilarityMatch(boardId, commitSha, commitMessage, ref);
+            return;
+        }
+
         var similarityMatch = commitSimilarityMatcher.match(boardId, commitMessage);
         similarityMatch.ifPresent(scored -> commitCardLinkRepository.save(
             new CommitCardLink(
@@ -129,6 +139,16 @@ public class WebhookIngestService {
                 MatchStatus.PENDING_CONFIRMATION
             )
         ));
+    }
+
+    private void appendDeferredSimilarityMatch(UUID boardId, String commitSha, String commitMessage, String ref) {
+        var payload = new LinkedHashMap<String, Object>();
+        payload.put("boardId", boardId);
+        payload.put("commitSha", commitSha);
+        payload.put("commitMessage", commitMessage);
+        payload.put("ref", ref);
+        payload.put("requestedAt", Instant.now());
+        outboxEventWriter.append("COMMIT_SIMILARITY_MATCH", UUID.randomUUID(), "commit.similarity-match.requested", payload);
     }
 
     private void appendCommitMatched(CommitCardLink link) {

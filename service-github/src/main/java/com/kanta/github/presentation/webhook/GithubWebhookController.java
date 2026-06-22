@@ -23,9 +23,10 @@ public class GithubWebhookController {
         @RequestBody String rawBody,
         @RequestHeader("X-Hub-Signature-256") String signature,
         @RequestHeader("X-GitHub-Delivery") String deliveryId,
-        @RequestHeader("X-GitHub-Event") String eventType
+        @RequestHeader("X-GitHub-Event") String eventType,
+        @RequestHeader(value = "X-Kanta-Rate-Limit-Exceeded", required = false) String rateLimitExceeded
     ) {
-        webhookIngestService.ingestPush(rawBody, signature, deliveryId, eventType);
+        webhookIngestService.ingestPush(rawBody, signature, deliveryId, eventType, Boolean.parseBoolean(rateLimitExceeded));
         return ResponseEntity.status(202).body(ApiResponse.accepted(new WebhookReceivedResponse(true, deliveryId)));
     }
 }
