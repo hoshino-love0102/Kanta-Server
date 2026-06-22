@@ -8,7 +8,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
@@ -26,15 +25,14 @@ public class MeetingNote {
     @Column(nullable = false, length = 120)
     private String creatorUserId;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String rawText;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MeetingNoteStatus status;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String aiSummary;
 
     @Column(nullable = false)
