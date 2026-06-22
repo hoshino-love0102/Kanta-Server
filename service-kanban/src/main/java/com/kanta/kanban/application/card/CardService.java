@@ -71,7 +71,10 @@ public class CardService {
             .collect(Collectors.toSet());
         var displayNames = workspaceMemberCacheService.findDisplayNames(assigneeMemberIds);
         var cardResponses = cards.getContent().stream()
-            .map(card -> CardResponse.from(card, displayNames.get(card.getAssigneeMemberId())))
+            .map(card -> CardResponse.from(
+                card,
+                card.getAssigneeMemberId() == null ? null : displayNames.get(card.getAssigneeMemberId())
+            ))
             .toList();
 
         return new PageResponse<>(cardResponses, cards.getTotalElements(), cards.getTotalPages());
@@ -156,7 +159,10 @@ public class CardService {
             .collect(Collectors.toSet());
         var displayNames = workspaceMemberCacheService.findDisplayNames(assigneeMemberIds);
         return cards.stream()
-            .map(card -> CardResponse.from(card, displayNames.get(card.getAssigneeMemberId())))
+            .map(card -> CardResponse.from(
+                card,
+                card.getAssigneeMemberId() == null ? null : displayNames.get(card.getAssigneeMemberId())
+            ))
             .toList();
     }
 
