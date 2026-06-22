@@ -25,7 +25,7 @@ public class WorkspaceMember {
 
     private String userId;
 
-    @Column(nullable = false, length = 200)
+    @Column(length = 200)
     private String email;
 
     @Column(length = 120)

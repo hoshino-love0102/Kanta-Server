@@ -11,7 +11,7 @@ CREATE TABLE workspace_member (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id      UUID NOT NULL REFERENCES workspace (id),
     user_id           VARCHAR(120),
-    email             VARCHAR(200) NOT NULL,
+    email             VARCHAR(200),
     display_name      VARCHAR(120),
     github_username   VARCHAR(120),
     role              VARCHAR(20) NOT NULL,
