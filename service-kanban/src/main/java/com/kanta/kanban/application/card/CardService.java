@@ -25,6 +25,7 @@ import com.kanta.kanban.presentation.card.CreateCardResponse;
 import com.kanta.kanban.presentation.card.UpdateCardRequest;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -133,7 +134,7 @@ public class CardService {
         cardMoveLogRepository.save(
             new CardMoveLog(card, movedByMemberId, MovedByType.USER, fromStatus, toStatus)
         );
-        appendCardMoved(card, fromStatus, toStatus, movedByMemberId);
+        appendCardMoved(card, fromStatus, toStatus, movedByMemberId, MovedByType.USER);
 
         return new ChangeCardStatusResponse(card.getId(), card.getStatus(), card.getUpdatedAt());
     }
@@ -143,6 +144,33 @@ public class CardService {
         var card = findCard(cardId);
         appendCardDeleted(card);
         cardRepository.delete(card);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CardResponse> searchByTitle(UUID boardId, String titleContains) {
+        boardService.findBoard(boardId);
+        var cards = cardRepository.findByBoardIdAndTitleContains(boardId, titleContains, PageRequest.of(0, 10));
+        var assigneeMemberIds = cards.stream()
+            .map(Card::getAssigneeMemberId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        var displayNames = workspaceMemberCacheService.findDisplayNames(assigneeMemberIds);
+        return cards.stream()
+            .map(card -> CardResponse.from(card, displayNames.get(card.getAssigneeMemberId())))
+            .toList();
+    }
+
+    @Transactional
+    public void moveBySystem(UUID cardId, CardStatus toStatus) {
+        var card = findCard(cardId);
+        var fromStatus = card.getStatus();
+        if (fromStatus == toStatus) {
+            return;
+        }
+        card.setStatus(toStatus);
+        card.setUpdatedAt(Instant.now());
+        cardMoveLogRepository.save(new CardMoveLog(card, null, MovedByType.SYSTEM, fromStatus, toStatus));
+        appendCardMoved(card, fromStatus, toStatus, null, MovedByType.SYSTEM);
     }
 
     @Transactional(readOnly = true)
@@ -176,7 +204,9 @@ public class CardService {
         outboxEventWriter.append("CARD", card.getId(), "card.created", payload);
     }
 
-    private void appendCardMoved(Card card, CardStatus fromStatus, CardStatus toStatus, UUID movedByMemberId) {
+    private void appendCardMoved(
+        Card card, CardStatus fromStatus, CardStatus toStatus, UUID movedByMemberId, MovedByType movedByType
+    ) {
         var payload = new LinkedHashMap<String, Object>();
         payload.put("cardId", card.getId());
         payload.put("boardId", card.getBoard().getId());
@@ -184,7 +214,7 @@ public class CardService {
         payload.put("fromStatus", fromStatus.name());
         payload.put("toStatus", toStatus.name());
         payload.put("movedByMemberId", movedByMemberId);
-        payload.put("movedByType", MovedByType.USER.name());
+        payload.put("movedByType", movedByType.name());
         payload.put("updatedAt", card.getUpdatedAt());
         outboxEventWriter.append("CARD", card.getId(), "card.moved", payload);
     }

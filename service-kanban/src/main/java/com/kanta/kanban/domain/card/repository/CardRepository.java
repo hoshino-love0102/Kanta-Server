@@ -2,6 +2,7 @@ package com.kanta.kanban.domain.card.repository;
 
 import com.kanta.kanban.domain.card.entity.Card;
 import com.kanta.kanban.domain.card.enumeration.CardStatus;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,4 +24,12 @@ public interface CardRepository extends JpaRepository<Card, UUID> {
         @Param("assigneeMemberId") UUID assigneeMemberId,
         Pageable pageable
     );
+
+    @Query("""
+        select c from Card c
+        where c.board.id = :boardId
+          and lower(c.title) like lower(concat('%', :titleContains, '%'))
+        order by c.createdAt desc
+        """)
+    List<Card> findByBoardIdAndTitleContains(@Param("boardId") UUID boardId, @Param("titleContains") String titleContains, Pageable pageable);
 }
