@@ -68,6 +68,10 @@ public class WorkspaceMemberCache {
         return displayName;
     }
 
+    public String getRole() {
+        return role;
+    }
+
     public boolean isActive() {
         return active;
     }
