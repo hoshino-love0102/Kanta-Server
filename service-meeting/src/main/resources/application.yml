@@ -41,3 +41,6 @@ kanta:
     poll-delay-ms: ${OUTBOX_POLL_DELAY_MS:5000}
   kanban:
     base-url: ${KANBAN_SERVICE_URL:http://service-kanban:8081}
+  ai:
+    base-url: ${AI_SERVICE_URL:http://localhost:8000}
+    timezone: ${AI_TIMEZONE:Asia/Seoul}

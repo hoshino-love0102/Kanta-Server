@@ -1,18 +1,18 @@
 package com.kanta.meeting.infrastructure.ai;
 
 import com.kanta.meeting.domain.meeting.AiMeetingSummarizer;
+import com.kanta.meeting.domain.meeting.AiMeetingSummarizer.MeetingNoteAiRequest;
 import com.kanta.meeting.domain.meeting.MeetingSummarizationResult;
 import com.kanta.meeting.domain.meeting.MeetingSummarizationResult.ActionItemCandidateDraft;
 import java.util.List;
-import org.springframework.stereotype.Component;
 
-@Component
 public class NaiveAiMeetingSummarizer implements AiMeetingSummarizer {
     private static final int MAX_CANDIDATES = 10;
     private static final int SUMMARY_MAX_LENGTH = 200;
 
     @Override
-    public MeetingSummarizationResult summarize(String rawText) {
+    public MeetingSummarizationResult summarize(MeetingNoteAiRequest request) {
+        var rawText = request.rawText();
         var sentences = List.of(rawText.split("(?<=[.!?]|[다요죠]\\.)\\s*|\\R+")).stream()
             .map(String::trim)
             .filter(sentence -> !sentence.isEmpty())

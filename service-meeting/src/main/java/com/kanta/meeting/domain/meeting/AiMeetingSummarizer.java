@@ -1,5 +1,8 @@
 package com.kanta.meeting.domain.meeting;
 
 public interface AiMeetingSummarizer {
-    MeetingSummarizationResult summarize(String rawText);
+    MeetingSummarizationResult summarize(MeetingNoteAiRequest request);
+
+    record MeetingNoteAiRequest(java.util.UUID meetingNoteId, java.util.UUID boardId, String rawText) {
+    }
 }

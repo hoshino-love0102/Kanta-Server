@@ -2,6 +2,7 @@ package com.kanta.meeting.application.meeting;
 
 import com.kanta.meeting.application.outbox.OutboxEventWriter;
 import com.kanta.meeting.domain.meeting.AiMeetingSummarizer;
+import com.kanta.meeting.domain.meeting.AiMeetingSummarizer.MeetingNoteAiRequest;
 import com.kanta.meeting.domain.meeting.MeetingSummarizationResult;
 import com.kanta.meeting.domain.meeting.entity.ActionItemCandidate;
 import com.kanta.meeting.domain.meeting.entity.MeetingNote;
@@ -65,7 +66,7 @@ public class MeetingSummarizationListener {
 
     private MeetingSummarizationResult summarize(MeetingNote note) {
         try {
-            return aiMeetingSummarizer.summarize(note.getRawText());
+            return aiMeetingSummarizer.summarize(new MeetingNoteAiRequest(note.getId(), note.getBoardId(), note.getRawText()));
         } catch (Exception exception) {
             log.error("회의록 요약 처리에 실패했습니다. meetingNoteId={}", note.getId(), exception);
             return null;
