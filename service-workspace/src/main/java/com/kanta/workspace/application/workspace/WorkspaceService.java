@@ -166,7 +166,7 @@ public class WorkspaceService {
         var userId = PassportHolder.current().requireUserId();
         return workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, userId)
             .filter(WorkspaceMember::isActive)
-            .orElseThrow(() -> new ForbiddenException("워크스페이스 멤버가 아닙니다.", "NOT_WORKSPACE_MEMBER"));
+            .orElseThrow(() -> new ForbiddenException("워크스페이스 멤버가 아닙니다.", "MEMBER_NOT_IN_WORKSPACE"));
     }
 
     private WorkspaceMember requireManager(UUID workspaceId) {
