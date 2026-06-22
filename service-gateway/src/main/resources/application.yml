@@ -68,6 +68,12 @@ spring:
           filters:
             - StripPrefix=1
             - PassportExchange
+        - id: websocket-hub
+          uri: ${WEBSOCKET_HUB_SERVICE_URL:http://service-websocket-hub:8087}
+          predicates:
+            - Path=/api/ws/**
+          filters:
+            - StripPrefix=1
 
 server:
   port: ${SERVER_PORT:8080}
