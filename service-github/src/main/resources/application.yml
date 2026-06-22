@@ -41,6 +41,10 @@ kanta:
     poll-delay-ms: ${OUTBOX_POLL_DELAY_MS:5000}
   github:
     webhook-secret: ${GITHUB_WEBHOOK_SECRET:change-me-github-webhook-secret}
+  rate-limit:
+    webhook:
+      per-minute: ${RATE_LIMIT_WEBHOOK_PER_MINUTE:60}
+      per-day: ${RATE_LIMIT_WEBHOOK_PER_DAY:5000}
   kanban:
     base-url: ${KANBAN_SERVICE_URL:http://service-kanban:8081}
   workspace:
