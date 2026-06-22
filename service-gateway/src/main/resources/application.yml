@@ -46,6 +46,13 @@ spring:
           filters:
             - StripPrefix=1
             - PassportExchange
+        - id: meeting-service
+          uri: ${MEETING_SERVICE_URL:http://service-meeting:8085}
+          predicates:
+            - Path=/api/meeting-notes/**
+          filters:
+            - StripPrefix=1
+            - PassportExchange
 
 server:
   port: ${SERVER_PORT:8080}

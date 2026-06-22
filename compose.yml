@@ -145,6 +145,31 @@ services:
       KAFKA_CONSUMER_GROUP_ID: service-workspace
       SERVER_PORT: 8084
 
+  service-meeting:
+    build:
+      context: .
+      args:
+        MODULE: service-meeting
+    container_name: kanta-service-meeting
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      service-kanban:
+        condition: service_started
+    ports:
+      - "8085:8085"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/kanta_meeting
+      DB_USERNAME: ${POSTGRES_USER:-kanta}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-kanta}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_CONSUMER_GROUP_ID: service-meeting
+      SERVER_PORT: 8085
+      KANBAN_SERVICE_URL: http://service-kanban:8081
+
   service-gateway:
     build:
       context: .
@@ -157,6 +182,7 @@ services:
       - service-user
       - service-auth
       - service-workspace
+      - service-meeting
     ports:
       - "8080:8080"
     environment:
@@ -165,6 +191,7 @@ services:
       USER_SERVICE_URL: http://service-user:8082
       KANBAN_SERVICE_URL: http://service-kanban:8081
       WORKSPACE_SERVICE_URL: http://service-workspace:8084
+      MEETING_SERVICE_URL: http://service-meeting:8085
       INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET:-change-me-internal-gateway-secret}
 
 volumes:

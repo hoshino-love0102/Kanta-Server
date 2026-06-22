@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-for db in kanta_kanban kanta_user kanta_auth kanta_workspace; do
+for db in kanta_kanban kanta_user kanta_auth kanta_workspace kanta_meeting; do
   if [ "$db" = "$POSTGRES_DB" ]; then
     continue
   fi
