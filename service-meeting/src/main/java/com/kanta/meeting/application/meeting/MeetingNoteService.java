@@ -1,6 +1,7 @@
 package com.kanta.meeting.application.meeting;
 
 import com.kanta.meeting.common.BadRequestException;
+import com.kanta.meeting.common.ConflictException;
 import com.kanta.meeting.common.ForbiddenException;
 import com.kanta.meeting.common.NotFoundException;
 import com.kanta.meeting.domain.kanban.KanbanCardClient;
@@ -61,7 +62,7 @@ public class MeetingNoteService {
         var note = findNote(meetingNoteId);
         requireOwner(note);
         if (!note.isCompleted()) {
-            throw new BadRequestException("요약이 완료된 회의록만 카드로 등록할 수 있습니다.", "MEETING_NOTE_NOT_COMPLETED");
+            throw new ConflictException("요약이 완료된 회의록만 카드로 등록할 수 있습니다.", "MEETING_NOTE_NOT_PROCESSED");
         }
 
         var candidateIds = request.items().stream().map(RegisterCardsRequest.Item::candidateId).toList();

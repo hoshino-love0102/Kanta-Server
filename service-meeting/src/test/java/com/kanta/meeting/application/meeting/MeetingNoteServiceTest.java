@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.kanta.meeting.common.BadRequestException;
+import com.kanta.meeting.common.ConflictException;
 import com.kanta.meeting.common.ForbiddenException;
 import com.kanta.meeting.common.NotFoundException;
 import com.kanta.meeting.domain.kanban.KanbanCardClient;
@@ -148,7 +149,7 @@ class MeetingNoteServiceTest {
     }
 
     @Test
-    void registerCards_요약이_완료되지_않았으면_BadRequest() {
+    void registerCards_요약이_완료되지_않았으면_Conflict() {
         var note = new MeetingNote(boardId, userId, "raw text");
         var noteId = UUID.randomUUID();
         setId(note, noteId);
@@ -158,7 +159,7 @@ class MeetingNoteServiceTest {
             meetingNoteService.registerCards(noteId, new RegisterCardsRequest(List.of(
                 new RegisterCardsRequest.Item(UUID.randomUUID(), null, null)
             )))
-        ).isInstanceOf(BadRequestException.class);
+        ).isInstanceOf(ConflictException.class);
     }
 
     @Test
