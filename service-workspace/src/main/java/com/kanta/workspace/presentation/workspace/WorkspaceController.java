@@ -2,6 +2,7 @@ package com.kanta.workspace.presentation.workspace;
 
 import com.kanta.workspace.application.workspace.WorkspaceService;
 import com.kanta.workspace.common.ApiResponse;
+import com.kanta.workspace.common.PageResponse;
 import com.kanta.workspace.infrastructure.security.UserAccess;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @UserAccess
@@ -31,8 +33,12 @@ public class WorkspaceController {
     }
 
     @GetMapping("/{workspaceId}/members")
-    public ApiResponse<MembersResponse> getMembers(@PathVariable UUID workspaceId) {
-        return ApiResponse.ok(new MembersResponse(workspaceService.getMembers(workspaceId)));
+    public ApiResponse<PageResponse<MemberResponse>> getMembers(
+        @PathVariable UUID workspaceId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        return ApiResponse.ok(workspaceService.getMembers(workspaceId, page, size));
     }
 
     @PostMapping("/{workspaceId}/members/invite")

@@ -4,6 +4,7 @@ import com.kanta.workspace.application.outbox.OutboxEventWriter;
 import com.kanta.workspace.common.BadRequestException;
 import com.kanta.workspace.common.ForbiddenException;
 import com.kanta.workspace.common.NotFoundException;
+import com.kanta.workspace.common.PageResponse;
 import com.kanta.workspace.domain.workspace.entity.RepoBoardMapping;
 import com.kanta.workspace.domain.workspace.entity.Workspace;
 import com.kanta.workspace.domain.workspace.entity.WorkspaceMember;
@@ -21,10 +22,10 @@ import com.kanta.workspace.presentation.workspace.MemberResponse;
 import com.kanta.workspace.presentation.workspace.RegisterRepoBoardMappingRequest;
 import com.kanta.workspace.presentation.workspace.RepoBoardMappingResponse;
 import com.kanta.workspace.presentation.workspace.WorkspaceResponse;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,12 +80,13 @@ public class WorkspaceService {
     }
 
     @Transactional(readOnly = true)
-    public List<MemberResponse> getMembers(UUID workspaceId) {
+    public PageResponse<MemberResponse> getMembers(UUID workspaceId, int page, int size) {
         requireActiveMember(workspaceId);
-        return workspaceMemberRepository.findByWorkspaceId(workspaceId).stream()
-            .filter(WorkspaceMember::isActive)
-            .map(MemberResponse::from)
-            .toList();
+        var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+        var members = workspaceMemberRepository
+            .findByWorkspaceIdAndStatus(workspaceId, MemberStatus.ACTIVE, pageable)
+            .map(MemberResponse::from);
+        return new PageResponse<>(members.getContent(), members.getTotalElements(), members.getTotalPages());
     }
 
     @Transactional
