@@ -44,7 +44,3 @@ kanta:
   ai:
     base-url: ${AI_SERVICE_URL:http://localhost:8000}
     timezone: ${AI_TIMEZONE:Asia/Seoul}
-  rate-limit:
-    meeting-notes:
-      per-minute: ${RATE_LIMIT_MEETING_NOTES_PER_MINUTE:10}
-      per-day: ${RATE_LIMIT_MEETING_NOTES_PER_DAY:100}
