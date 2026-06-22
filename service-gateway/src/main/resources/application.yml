@@ -53,6 +53,19 @@ spring:
           filters:
             - StripPrefix=1
             - PassportExchange
+        - id: github-webhooks
+          uri: ${GITHUB_SERVICE_URL:http://service-github:8086}
+          predicates:
+            - Path=/api/github/webhooks
+          filters:
+            - StripPrefix=1
+        - id: github-commit-links
+          uri: ${GITHUB_SERVICE_URL:http://service-github:8086}
+          predicates:
+            - Path=/api/github/commit-links/**
+          filters:
+            - StripPrefix=1
+            - PassportExchange
 
 server:
   port: ${SERVER_PORT:8080}

@@ -170,6 +170,35 @@ services:
       SERVER_PORT: 8085
       KANBAN_SERVICE_URL: http://service-kanban:8081
 
+  service-github:
+    build:
+      context: .
+      args:
+        MODULE: service-github
+    container_name: kanta-service-github
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      service-kanban:
+        condition: service_started
+      service-workspace:
+        condition: service_started
+    ports:
+      - "8086:8086"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/kanta_github
+      DB_USERNAME: ${POSTGRES_USER:-kanta}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-kanta}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_CONSUMER_GROUP_ID: service-github
+      SERVER_PORT: 8086
+      KANBAN_SERVICE_URL: http://service-kanban:8081
+      WORKSPACE_SERVICE_URL: http://service-workspace:8084
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-change-me-github-webhook-secret}
+
   service-gateway:
     build:
       context: .
@@ -183,6 +212,7 @@ services:
       - service-auth
       - service-workspace
       - service-meeting
+      - service-github
     ports:
       - "8080:8080"
     environment:
@@ -192,6 +222,7 @@ services:
       KANBAN_SERVICE_URL: http://service-kanban:8081
       WORKSPACE_SERVICE_URL: http://service-workspace:8084
       MEETING_SERVICE_URL: http://service-meeting:8085
+      GITHUB_SERVICE_URL: http://service-github:8086
       INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET:-change-me-internal-gateway-secret}
 
 volumes:
