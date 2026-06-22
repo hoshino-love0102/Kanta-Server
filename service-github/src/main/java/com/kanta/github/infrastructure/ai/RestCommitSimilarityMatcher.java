@@ -9,11 +9,15 @@ import com.kanta.github.domain.kanban.KanbanCardFinder;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
 public class RestCommitSimilarityMatcher implements CommitSimilarityMatcher {
+    private static final Logger log = LoggerFactory.getLogger(RestCommitSimilarityMatcher.class);
+
     private final RestClient restClient;
     private final KanbanCardFinder kanbanCardFinder;
 
@@ -30,17 +34,21 @@ public class RestCommitSimilarityMatcher implements CommitSimilarityMatcher {
     public Optional<ScoredCardMatch> match(UUID boardId, String commitMessage) {
         var candidates = kanbanCardFinder.findCandidates(boardId, commitMessage);
         if (candidates.isEmpty()) {
+            log.info("AI 매칭 후보가 없어 호출을 건너뜁니다. boardId={}, commitMessage={}", boardId, commitMessage);
             return Optional.empty();
         }
 
         try {
+            var requestBody = new AiCommitMatchRequest(boardId.toString(), null, commitMessage, candidates.stream()
+                .map(AiCardCandidate::from)
+                .toList());
+            log.info("AI 커밋 매칭 요청. candidates={}", candidates.size());
             var response = restClient.post()
                 .uri("/v1/commit/match")
-                .body(new AiCommitMatchRequest(boardId.toString(), null, commitMessage, candidates.stream()
-                    .map(AiCardCandidate::from)
-                    .toList()))
+                .body(requestBody)
                 .retrieve()
                 .body(AiCommitMatchResponse.class);
+            log.info("AI 커밋 매칭 응답. response={}", response);
             if (response == null || response.matches() == null || response.matches().isEmpty()) {
                 return Optional.empty();
             }
@@ -50,6 +58,7 @@ public class RestCommitSimilarityMatcher implements CommitSimilarityMatcher {
                 first.score()
             ));
         } catch (Exception exception) {
+            log.warn("AI 서버 커밋 매칭 호출에 실패했습니다. boardId={}", boardId, exception);
             return Optional.empty();
         }
     }
