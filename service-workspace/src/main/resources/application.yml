@@ -35,6 +35,7 @@ kanta:
   kafka:
     topics:
       member-updated: ${KAFKA_TOPIC_MEMBER_UPDATED:member.updated}
+      member-removed: ${KAFKA_TOPIC_MEMBER_REMOVED:member.removed}
   outbox:
     publisher-enabled: ${OUTBOX_PUBLISHER_ENABLED:true}
     poll-size: ${OUTBOX_POLL_SIZE:50}
