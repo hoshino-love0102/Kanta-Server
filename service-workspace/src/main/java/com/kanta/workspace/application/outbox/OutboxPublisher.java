@@ -16,17 +16,20 @@ public class OutboxPublisher {
     private final OutboxEventRepository outboxEventRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final String memberUpdatedTopic;
+    private final String memberRemovedTopic;
     private final int pollSize;
 
     public OutboxPublisher(
         OutboxEventRepository outboxEventRepository,
         KafkaTemplate<String, String> kafkaTemplate,
         @Value("${kanta.kafka.topics.member-updated}") String memberUpdatedTopic,
+        @Value("${kanta.kafka.topics.member-removed}") String memberRemovedTopic,
         @Value("${kanta.outbox.poll-size}") int pollSize
     ) {
         this.outboxEventRepository = outboxEventRepository;
         this.kafkaTemplate = kafkaTemplate;
         this.memberUpdatedTopic = memberUpdatedTopic;
+        this.memberRemovedTopic = memberRemovedTopic;
         this.pollSize = pollSize;
     }
 
@@ -37,12 +40,16 @@ public class OutboxPublisher {
 
         for (var event : events) {
             try {
-                kafkaTemplate.send(memberUpdatedTopic, event.getAggregateId().toString(), event.getPayload())
+                kafkaTemplate.send(topicFor(event.getEventType()), event.getAggregateId().toString(), event.getPayload())
                     .get(5, TimeUnit.SECONDS);
                 event.markPublished();
             } catch (Exception exception) {
                 event.markFailed(exception.getMessage());
             }
         }
+    }
+
+    private String topicFor(String eventType) {
+        return "member.removed".equals(eventType) ? memberRemovedTopic : memberUpdatedTopic;
     }
 }
