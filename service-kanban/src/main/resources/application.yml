@@ -36,6 +36,7 @@ kanta:
     topics:
       card-events: ${KAFKA_TOPIC_CARD_EVENTS:card.events}
       member-updated: ${KAFKA_TOPIC_MEMBER_UPDATED:member.updated}
+      commit-matched: ${KAFKA_TOPIC_COMMIT_MATCHED:commit.matched}
   outbox:
     publisher-enabled: ${OUTBOX_PUBLISHER_ENABLED:true}
     poll-size: ${OUTBOX_POLL_SIZE:50}
