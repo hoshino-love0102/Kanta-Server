@@ -2,6 +2,7 @@ package com.kanta.meeting.application.meeting;
 
 import com.kanta.meeting.application.outbox.OutboxEventWriter;
 import com.kanta.meeting.domain.meeting.AiMeetingSummarizer;
+import com.kanta.meeting.domain.meeting.MeetingSummarizationResult;
 import com.kanta.meeting.domain.meeting.entity.ActionItemCandidate;
 import com.kanta.meeting.domain.meeting.entity.MeetingNote;
 import com.kanta.meeting.domain.meeting.repository.ActionItemCandidateRepository;
@@ -46,18 +47,27 @@ public class MeetingSummarizationListener {
             return;
         }
 
+        var result = summarize(note);
+        if (result == null) {
+            note.fail();
+            return;
+        }
+
+        result.actionItemCandidates().forEach(candidate ->
+            actionItemCandidateRepository.save(
+                new ActionItemCandidate(note.getId(), candidate.title(), candidate.assigneeHint(), candidate.dueDateHint(), null, null)
+            )
+        );
+        note.complete(result.summary());
+        appendMeetingSummarized(note);
+    }
+
+    private MeetingSummarizationResult summarize(MeetingNote note) {
         try {
-            var result = aiMeetingSummarizer.summarize(note.getRawText());
-            result.actionItemCandidates().forEach(candidate ->
-                actionItemCandidateRepository.save(
-                    new ActionItemCandidate(note.getId(), candidate.title(), candidate.assigneeHint(), candidate.dueDateHint(), null, null)
-                )
-            );
-            note.complete(result.summary());
-            appendMeetingSummarized(note);
+            return aiMeetingSummarizer.summarize(note.getRawText());
         } catch (Exception exception) {
             log.error("회의록 요약 처리에 실패했습니다. meetingNoteId={}", note.getId(), exception);
-            note.fail();
+            return null;
         }
     }
 
