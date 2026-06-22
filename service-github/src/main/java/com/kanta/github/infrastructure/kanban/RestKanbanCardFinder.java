@@ -7,11 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
 public class RestKanbanCardFinder implements KanbanCardFinder {
+    private static final Logger log = LoggerFactory.getLogger(RestKanbanCardFinder.class);
+
     private final RestClient restClient;
 
     public RestKanbanCardFinder(RestClient.Builder restClientBuilder, KanbanClientProperties properties) {
@@ -46,6 +50,7 @@ public class RestKanbanCardFinder implements KanbanCardFinder {
             }
             return candidates;
         } catch (Exception exception) {
+            log.warn("카드 후보 조회에 실패했습니다. boardId={}, query={}", boardId, query, exception);
             return List.of();
         }
     }
