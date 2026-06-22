@@ -3,14 +3,16 @@ package com.kanta.github.application.commitlink;
 import com.kanta.github.application.outbox.OutboxEventWriter;
 import com.kanta.github.common.ConflictException;
 import com.kanta.github.common.NotFoundException;
+import com.kanta.github.common.PageResponse;
 import com.kanta.github.domain.commitlink.entity.CommitCardLink;
 import com.kanta.github.domain.commitlink.enumeration.MatchStatus;
 import com.kanta.github.domain.commitlink.repository.CommitCardLinkRepository;
 import com.kanta.github.domain.kanban.KanbanCardClient;
+import com.kanta.github.presentation.commitlink.PendingCommitLinkResponse;
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,8 +33,12 @@ public class CommitLinkService {
     }
 
     @Transactional(readOnly = true)
-    public List<CommitCardLink> getPending() {
-        return commitCardLinkRepository.findByMatchStatusOrderByCreatedAtAsc(MatchStatus.PENDING_CONFIRMATION);
+    public PageResponse<PendingCommitLinkResponse> getPending(int page, int size) {
+        var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+        var links = commitCardLinkRepository
+            .findByMatchStatusOrderByCreatedAtAsc(MatchStatus.PENDING_CONFIRMATION, pageable)
+            .map(PendingCommitLinkResponse::from);
+        return new PageResponse<>(links.getContent(), links.getTotalElements(), links.getTotalPages());
     }
 
     @Transactional

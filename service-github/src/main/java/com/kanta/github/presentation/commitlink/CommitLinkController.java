@@ -2,13 +2,14 @@ package com.kanta.github.presentation.commitlink;
 
 import com.kanta.github.application.commitlink.CommitLinkService;
 import com.kanta.github.common.ApiResponse;
+import com.kanta.github.common.PageResponse;
 import com.kanta.github.infrastructure.security.UserAccess;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -22,9 +23,11 @@ public class CommitLinkController {
     }
 
     @GetMapping("/pending")
-    public ApiResponse<PendingCommitLinksResponse> getPending() {
-        var content = commitLinkService.getPending().stream().map(PendingCommitLinkResponse::from).toList();
-        return ApiResponse.ok(new PendingCommitLinksResponse(content));
+    public ApiResponse<PageResponse<PendingCommitLinkResponse>> getPending(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        return ApiResponse.ok(commitLinkService.getPending(page, size));
     }
 
     @PostMapping("/{id}/confirm")
