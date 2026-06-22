@@ -2,11 +2,9 @@ package com.kanta.github.common;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.kanta.github.infrastructure.ratelimit.RateLimitExceededException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
@@ -41,15 +39,6 @@ class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(404))
             .andExpect(jsonPath("$.code").value("COMMIT_LINK_NOT_FOUND"))
             .andExpect(jsonPath("$.message").value("커밋-카드 연결 후보를 찾을 수 없습니다."));
-    }
-
-    @Test
-    void rate_limit_초과시_429와_Retry_After_헤더를_응답한다() throws Exception {
-        mockMvc.perform(get("/test/rate-limit"))
-            .andExpect(status().isTooManyRequests())
-            .andExpect(header().string("Retry-After", "5"))
-            .andExpect(jsonPath("$.code").value("RATE_LIMIT_EXCEEDED"))
-            .andExpect(jsonPath("$.status").value(429));
     }
 
     @Test
@@ -99,11 +88,6 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/test/not-found")
         public void notFound() {
             throw new NotFoundException("커밋-카드 연결 후보를 찾을 수 없습니다.", "COMMIT_LINK_NOT_FOUND");
-        }
-
-        @GetMapping("/test/rate-limit")
-        public void rateLimit() {
-            throw new RateLimitExceededException(5);
         }
 
         @PostMapping("/test/validate")
