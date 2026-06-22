@@ -57,4 +57,12 @@ public class WorkspaceController {
         workspaceService.removeMember(workspaceId, memberId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{workspaceId}/repo-mappings")
+    public ResponseEntity<ApiResponse<RepoBoardMappingResponse>> registerRepoBoardMapping(
+        @PathVariable UUID workspaceId,
+        @Valid @RequestBody RegisterRepoBoardMappingRequest request
+    ) {
+        return ResponseEntity.status(201).body(ApiResponse.created(workspaceService.registerRepoBoardMapping(workspaceId, request)));
+    }
 }

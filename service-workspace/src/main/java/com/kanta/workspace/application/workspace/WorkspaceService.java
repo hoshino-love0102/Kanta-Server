@@ -4,10 +4,12 @@ import com.kanta.workspace.application.outbox.OutboxEventWriter;
 import com.kanta.workspace.common.BadRequestException;
 import com.kanta.workspace.common.ForbiddenException;
 import com.kanta.workspace.common.NotFoundException;
+import com.kanta.workspace.domain.workspace.entity.RepoBoardMapping;
 import com.kanta.workspace.domain.workspace.entity.Workspace;
 import com.kanta.workspace.domain.workspace.entity.WorkspaceMember;
 import com.kanta.workspace.domain.workspace.enumeration.MemberRole;
 import com.kanta.workspace.domain.workspace.enumeration.MemberStatus;
+import com.kanta.workspace.domain.workspace.repository.RepoBoardMappingRepository;
 import com.kanta.workspace.domain.workspace.repository.WorkspaceMemberRepository;
 import com.kanta.workspace.domain.workspace.repository.WorkspaceRepository;
 import com.kanta.workspace.infrastructure.security.PassportHolder;
@@ -16,6 +18,8 @@ import com.kanta.workspace.presentation.workspace.CreateWorkspaceRequest;
 import com.kanta.workspace.presentation.workspace.InviteMemberRequest;
 import com.kanta.workspace.presentation.workspace.InviteMemberResponse;
 import com.kanta.workspace.presentation.workspace.MemberResponse;
+import com.kanta.workspace.presentation.workspace.RegisterRepoBoardMappingRequest;
+import com.kanta.workspace.presentation.workspace.RepoBoardMappingResponse;
 import com.kanta.workspace.presentation.workspace.WorkspaceResponse;
 import java.util.List;
 import java.util.Locale;
@@ -28,16 +32,38 @@ import org.springframework.transaction.annotation.Transactional;
 public class WorkspaceService {
     private final WorkspaceRepository workspaceRepository;
     private final WorkspaceMemberRepository workspaceMemberRepository;
+    private final RepoBoardMappingRepository repoBoardMappingRepository;
     private final OutboxEventWriter outboxEventWriter;
 
     public WorkspaceService(
         WorkspaceRepository workspaceRepository,
         WorkspaceMemberRepository workspaceMemberRepository,
+        RepoBoardMappingRepository repoBoardMappingRepository,
         OutboxEventWriter outboxEventWriter
     ) {
         this.workspaceRepository = workspaceRepository;
         this.workspaceMemberRepository = workspaceMemberRepository;
+        this.repoBoardMappingRepository = repoBoardMappingRepository;
         this.outboxEventWriter = outboxEventWriter;
+    }
+
+    @Transactional
+    public RepoBoardMappingResponse registerRepoBoardMapping(UUID workspaceId, RegisterRepoBoardMappingRequest request) {
+        requireManager(workspaceId);
+        if (repoBoardMappingRepository.existsByGithubRepo(request.githubRepo())) {
+            throw new BadRequestException("이미 등록된 repository입니다.", "REPO_ALREADY_MAPPED");
+        }
+        var mapping = repoBoardMappingRepository.save(
+            new RepoBoardMapping(workspaceId, request.githubRepo(), request.boardId())
+        );
+        return RepoBoardMappingResponse.from(mapping);
+    }
+
+    @Transactional(readOnly = true)
+    public RepoBoardMappingResponse findRepoBoardMapping(String githubRepo) {
+        var mapping = repoBoardMappingRepository.findByGithubRepo(githubRepo)
+            .orElseThrow(() -> new NotFoundException("repo-board 매핑을 찾을 수 없습니다.", "REPO_MAPPING_NOT_FOUND"));
+        return RepoBoardMappingResponse.from(mapping);
     }
 
     @Transactional
