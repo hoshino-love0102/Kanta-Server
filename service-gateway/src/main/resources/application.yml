@@ -53,12 +53,14 @@ spring:
           filters:
             - StripPrefix=1
             - PassportExchange
+            - WorkspaceRateLimit=meeting-notes
         - id: github-webhooks
           uri: ${GITHUB_SERVICE_URL:http://service-github:8086}
           predicates:
             - Path=/api/github/webhooks
           filters:
             - StripPrefix=1
+            - WorkspaceRateLimit=github-webhook
         - id: github-commit-links
           uri: ${GITHUB_SERVICE_URL:http://service-github:8086}
           predicates:
@@ -73,4 +75,12 @@ server:
 kanta:
   gateway:
     auth-service-url: ${AUTH_SERVICE_URL:http://service-auth:8083}
+    kanban-service-url: ${KANBAN_SERVICE_URL:http://service-kanban:8081}
+    workspace-service-url: ${WORKSPACE_SERVICE_URL:http://service-workspace:8084}
     internal-secret: ${INTERNAL_GATEWAY_SECRET:change-me-internal-gateway-secret}
+  rate-limit:
+    github-webhook:
+      per-minute: ${GITHUB_WEBHOOK_RATE_LIMIT_PER_MINUTE:60}
+    meeting-notes:
+      per-minute: ${MEETING_NOTES_RATE_LIMIT_PER_MINUTE:10}
+      per-day: ${MEETING_NOTES_RATE_LIMIT_PER_DAY:100}
