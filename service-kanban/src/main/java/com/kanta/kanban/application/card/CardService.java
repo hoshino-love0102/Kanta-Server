@@ -16,7 +16,6 @@ import com.kanta.kanban.domain.card.repository.CardMoveLogRepository;
 import com.kanta.kanban.domain.card.repository.CardRepository;
 import com.kanta.kanban.infrastructure.security.PassportHolder;
 import com.kanta.kanban.presentation.card.CardMoveLogResponse;
-import com.kanta.kanban.presentation.card.CardMoveLogsResponse;
 import com.kanta.kanban.presentation.card.CardResponse;
 import com.kanta.kanban.presentation.card.ChangeCardStatusRequest;
 import com.kanta.kanban.presentation.card.ChangeCardStatusResponse;
@@ -180,15 +179,15 @@ public class CardService {
     }
 
     @Transactional(readOnly = true)
-    public CardMoveLogsResponse getMoveLogs(UUID cardId) {
+    public PageResponse<CardMoveLogResponse> getMoveLogs(UUID cardId, int page, int size) {
         if (!cardRepository.existsById(cardId)) {
             throw new NotFoundException("카드를 찾을 수 없습니다.", "CARD_NOT_FOUND");
         }
 
-        var logs = cardMoveLogRepository.findByCard_IdOrderByMovedAtAsc(cardId).stream()
-            .map(CardMoveLogResponse::from)
-            .toList();
-        return new CardMoveLogsResponse(logs);
+        var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+        var logs = cardMoveLogRepository.findByCard_IdOrderByMovedAtAsc(cardId, pageable)
+            .map(CardMoveLogResponse::from);
+        return new PageResponse<>(logs.getContent(), logs.getTotalElements(), logs.getTotalPages());
     }
 
     private Card findCard(UUID cardId) {

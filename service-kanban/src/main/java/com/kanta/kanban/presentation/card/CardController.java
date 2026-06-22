@@ -70,7 +70,11 @@ public class CardController {
     }
 
     @GetMapping("/cards/{cardId}/move-logs")
-    public ApiResponse<CardMoveLogsResponse> getMoveLogs(@PathVariable UUID cardId) {
-        return ApiResponse.ok(cardService.getMoveLogs(cardId));
+    public ApiResponse<PageResponse<CardMoveLogResponse>> getMoveLogs(
+        @PathVariable UUID cardId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        return ApiResponse.ok(cardService.getMoveLogs(cardId, page, size));
     }
 }
