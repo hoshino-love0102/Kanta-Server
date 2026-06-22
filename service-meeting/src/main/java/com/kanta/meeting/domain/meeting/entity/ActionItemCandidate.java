@@ -32,6 +32,9 @@ public class ActionItemCandidate {
 
     private LocalDate dueDate;
 
+    @Column(nullable = false)
+    private boolean registered = false;
+
     protected ActionItemCandidate() {
     }
 
@@ -77,5 +80,13 @@ public class ActionItemCandidate {
 
     public LocalDate getDueDate() {
         return dueDate;
+    }
+
+    public boolean isRegistered() {
+        return registered;
+    }
+
+    public void markRegistered() {
+        this.registered = true;
     }
 }

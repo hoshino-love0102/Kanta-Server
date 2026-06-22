@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ActionItemCandidateRepository extends JpaRepository<ActionItemCandidate, UUID> {
     List<ActionItemCandidate> findByMeetingNoteId(UUID meetingNoteId);
+
+    List<ActionItemCandidate> findByIdInAndMeetingNoteId(List<UUID> ids, UUID meetingNoteId);
 }

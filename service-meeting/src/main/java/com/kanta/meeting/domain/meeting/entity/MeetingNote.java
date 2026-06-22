@@ -23,6 +23,9 @@ public class MeetingNote {
     @Column(nullable = false)
     private UUID boardId;
 
+    @Column(nullable = false, length = 120)
+    private String creatorUserId;
+
     @Lob
     @Column(nullable = false)
     private String rawText;
@@ -42,8 +45,9 @@ public class MeetingNote {
     protected MeetingNote() {
     }
 
-    public MeetingNote(UUID boardId, String rawText) {
+    public MeetingNote(UUID boardId, String creatorUserId, String rawText) {
         this.boardId = boardId;
+        this.creatorUserId = creatorUserId;
         this.rawText = rawText;
         this.status = MeetingNoteStatus.PROCESSING;
     }
@@ -54,6 +58,14 @@ public class MeetingNote {
 
     public UUID getBoardId() {
         return boardId;
+    }
+
+    public String getCreatorUserId() {
+        return creatorUserId;
+    }
+
+    public boolean isCompleted() {
+        return status == MeetingNoteStatus.COMPLETED;
     }
 
     public String getRawText() {
