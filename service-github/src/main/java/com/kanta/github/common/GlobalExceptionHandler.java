@@ -49,13 +49,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException exception) {
         var fieldError = exception.getBindingResult().getFieldErrors().stream().findFirst();
         var message = fieldError.map(error -> error.getDefaultMessage()).orElse("요청 값이 올바르지 않습니다.");
-        var body = new ApiResponse<Void>(400, message, null, "INVALID_REQUEST");
+        var body = new ApiResponse<Void>(400, message, null, "VALIDATION_ERROR");
         return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ApiResponse<Void>> handleMalformedRequest(Exception exception) {
-        var body = new ApiResponse<Void>(400, "요청 값이 올바르지 않습니다.", null, "INVALID_REQUEST");
+        var body = new ApiResponse<Void>(400, "요청 값이 올바르지 않습니다.", null, "VALIDATION_ERROR");
         return ResponseEntity.badRequest().body(body);
     }
 
