@@ -34,4 +34,13 @@ public class WorkspaceMemberCacheService {
         member.update(workspaceId, userId, displayName, role, active);
         workspaceMemberCacheRepository.save(member);
     }
+
+    @Transactional
+    public void remove(UUID memberId) {
+        workspaceMemberCacheRepository.findById(memberId)
+            .ifPresent(member -> {
+                member.update(member.getWorkspaceId(), member.getUserId(), member.getDisplayName(), member.getRole(), false);
+                workspaceMemberCacheRepository.save(member);
+            });
+    }
 }
