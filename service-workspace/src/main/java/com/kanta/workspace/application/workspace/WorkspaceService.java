@@ -2,10 +2,12 @@ package com.kanta.workspace.application.workspace;
 
 import com.kanta.workspace.application.outbox.OutboxEventWriter;
 import com.kanta.workspace.common.BadRequestException;
+import com.kanta.workspace.common.ForbiddenException;
 import com.kanta.workspace.common.NotFoundException;
 import com.kanta.workspace.domain.workspace.entity.Workspace;
 import com.kanta.workspace.domain.workspace.entity.WorkspaceMember;
 import com.kanta.workspace.domain.workspace.enumeration.MemberRole;
+import com.kanta.workspace.domain.workspace.enumeration.MemberStatus;
 import com.kanta.workspace.domain.workspace.repository.WorkspaceMemberRepository;
 import com.kanta.workspace.domain.workspace.repository.WorkspaceRepository;
 import com.kanta.workspace.infrastructure.security.PassportHolder;
@@ -16,6 +18,7 @@ import com.kanta.workspace.presentation.workspace.InviteMemberResponse;
 import com.kanta.workspace.presentation.workspace.MemberResponse;
 import com.kanta.workspace.presentation.workspace.WorkspaceResponse;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -41,8 +44,8 @@ public class WorkspaceService {
     public WorkspaceResponse create(CreateWorkspaceRequest request) {
         var workspace = workspaceRepository.save(new Workspace(request.name().trim(), request.githubOrg()));
 
-        var userId = PassportHolder.current().requireUserId();
-        var owner = WorkspaceMember.owner(workspace.getId(), userId, null, PassportHolder.current().username());
+        var passport = PassportHolder.current();
+        var owner = WorkspaceMember.owner(workspace.getId(), passport.requireUserId(), null, passport.username());
         workspaceMemberRepository.save(owner);
         publishMemberUpdated(owner);
 
@@ -51,7 +54,7 @@ public class WorkspaceService {
 
     @Transactional(readOnly = true)
     public List<MemberResponse> getMembers(UUID workspaceId) {
-        findWorkspace(workspaceId);
+        requireActiveMember(workspaceId);
         return workspaceMemberRepository.findByWorkspaceId(workspaceId).stream()
             .filter(WorkspaceMember::isActive)
             .map(MemberResponse::from)
@@ -60,20 +63,40 @@ public class WorkspaceService {
 
     @Transactional
     public InviteMemberResponse invite(UUID workspaceId, InviteMemberRequest request) {
-        findWorkspace(workspaceId);
+        requireManager(workspaceId);
 
-        if (workspaceMemberRepository.findByWorkspaceIdAndEmail(workspaceId, request.email()).isPresent()) {
+        if (request.role() == MemberRole.OWNER) {
+            throw new BadRequestException("OWNER 역할은 초대로 부여할 수 없습니다.", "CANNOT_INVITE_AS_OWNER");
+        }
+
+        var normalizedEmail = normalizeEmail(request.email());
+        if (workspaceMemberRepository.findByWorkspaceIdAndEmail(workspaceId, normalizedEmail).isPresent()) {
             throw new BadRequestException("이미 초대되었거나 가입된 이메일입니다.", "MEMBER_ALREADY_INVITED");
         }
 
-        var member = WorkspaceMember.invited(workspaceId, request.email(), request.role());
+        var member = WorkspaceMember.invited(workspaceId, normalizedEmail, request.role());
         workspaceMemberRepository.save(member);
         return new InviteMemberResponse(member.getId(), member.getStatus().name());
     }
 
     @Transactional
     public ChangeMemberRoleResponse changeRole(UUID workspaceId, UUID memberId, MemberRole role) {
+        var actingMember = requireManager(workspaceId);
         var member = findMember(workspaceId, memberId);
+
+        if (member.getId().equals(actingMember.getId())) {
+            throw new ForbiddenException("자기 자신의 역할은 변경할 수 없습니다.", "CANNOT_MODIFY_SELF");
+        }
+        if (member.getRole() == MemberRole.OWNER && actingMember.getRole() != MemberRole.OWNER) {
+            throw new ForbiddenException("OWNER는 OWNER만 변경할 수 있습니다.", "INSUFFICIENT_ROLE");
+        }
+        if (role == MemberRole.OWNER) {
+            throw new BadRequestException("OWNER 역할은 이양할 수 없습니다.", "CANNOT_GRANT_OWNER");
+        }
+        if (member.getRole() == MemberRole.OWNER && isLastOwner(workspaceId)) {
+            throw new BadRequestException("마지막 OWNER는 강등할 수 없습니다.", "LAST_OWNER_PROTECTED");
+        }
+
         member.changeRole(role);
 
         if (member.isActive()) {
@@ -85,7 +108,19 @@ public class WorkspaceService {
 
     @Transactional
     public void removeMember(UUID workspaceId, UUID memberId) {
+        var actingMember = requireManager(workspaceId);
         var member = findMember(workspaceId, memberId);
+
+        if (member.getId().equals(actingMember.getId())) {
+            throw new ForbiddenException("자기 자신은 제거할 수 없습니다.", "CANNOT_MODIFY_SELF");
+        }
+        if (member.getRole() == MemberRole.OWNER && actingMember.getRole() != MemberRole.OWNER) {
+            throw new ForbiddenException("OWNER는 OWNER만 제거할 수 있습니다.", "INSUFFICIENT_ROLE");
+        }
+        if (member.getRole() == MemberRole.OWNER && isLastOwner(workspaceId)) {
+            throw new BadRequestException("마지막 OWNER는 제거할 수 없습니다.", "LAST_OWNER_PROTECTED");
+        }
+
         var wasActive = member.isActive();
         workspaceMemberRepository.delete(member);
 
@@ -94,19 +129,44 @@ public class WorkspaceService {
         }
     }
 
+    private boolean isLastOwner(UUID workspaceId) {
+        return workspaceMemberRepository.countByWorkspaceIdAndRoleAndStatus(
+            workspaceId, MemberRole.OWNER, MemberStatus.ACTIVE
+        ) <= 1;
+    }
+
+    private WorkspaceMember requireActiveMember(UUID workspaceId) {
+        findWorkspace(workspaceId);
+        var userId = PassportHolder.current().requireUserId();
+        return workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, userId)
+            .filter(WorkspaceMember::isActive)
+            .orElseThrow(() -> new ForbiddenException("워크스페이스 멤버가 아닙니다.", "NOT_WORKSPACE_MEMBER"));
+    }
+
+    private WorkspaceMember requireManager(UUID workspaceId) {
+        var member = requireActiveMember(workspaceId);
+        if (member.getRole() != MemberRole.OWNER && member.getRole() != MemberRole.ADMIN) {
+            throw new ForbiddenException("권한이 없습니다.", "INSUFFICIENT_ROLE");
+        }
+        return member;
+    }
+
     private Workspace findWorkspace(UUID workspaceId) {
         return workspaceRepository.findById(workspaceId)
             .orElseThrow(() -> new NotFoundException("워크스페이스를 찾을 수 없습니다.", "WORKSPACE_NOT_FOUND"));
     }
 
     private WorkspaceMember findMember(UUID workspaceId, UUID memberId) {
-        findWorkspace(workspaceId);
         var member = workspaceMemberRepository.findById(memberId)
             .orElseThrow(() -> new NotFoundException("멤버를 찾을 수 없습니다.", "MEMBER_NOT_FOUND"));
         if (!member.getWorkspaceId().equals(workspaceId)) {
             throw new NotFoundException("멤버를 찾을 수 없습니다.", "MEMBER_NOT_FOUND");
         }
         return member;
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     private void publishMemberUpdated(WorkspaceMember member) {
