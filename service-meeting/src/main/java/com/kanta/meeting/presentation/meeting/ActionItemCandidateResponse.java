@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record ActionItemCandidateResponse(
+    UUID candidateId,
     String title,
     String assigneeHint,
     String dueDateHint,
@@ -13,6 +14,7 @@ public record ActionItemCandidateResponse(
 ) {
     public static ActionItemCandidateResponse from(ActionItemCandidate candidate) {
         return new ActionItemCandidateResponse(
+            candidate.getId(),
             candidate.getTitle(),
             candidate.getAssigneeHint(),
             candidate.getDueDateHint(),
