@@ -24,6 +24,7 @@ import com.kanta.workspace.infrastructure.security.PassportHolder;
 import com.kanta.workspace.presentation.workspace.CreateWorkspaceRequest;
 import com.kanta.workspace.presentation.workspace.InviteMemberRequest;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -316,6 +317,34 @@ class WorkspaceServiceTest {
         ).isInstanceOf(BadRequestException.class);
 
         verify(workspaceMemberRepository, never()).delete(any());
+    }
+
+    @Test
+    void getMyWorkspaces_내가_속한_워크스페이스만_반환한다() {
+        actingAs("user-1");
+        var membership = member(MemberRole.MEMBER, MemberStatus.ACTIVE);
+        setUserId(membership, "user-1");
+        when(workspaceMemberRepository.findByUserIdAndStatus("user-1", MemberStatus.ACTIVE))
+            .thenReturn(List.of(membership));
+        when(workspaceRepository.findAllById(List.of(membership.getWorkspaceId())))
+            .thenReturn(List.of(new Workspace("내 워크스페이스", null)));
+
+        var responses = workspaceService.getMyWorkspaces();
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).name()).isEqualTo("내 워크스페이스");
+    }
+
+    @Test
+    void getMyWorkspaces_속한_워크스페이스가_없으면_빈_목록을_반환한다() {
+        actingAs("stranger");
+        when(workspaceMemberRepository.findByUserIdAndStatus("stranger", MemberStatus.ACTIVE))
+            .thenReturn(List.of());
+        when(workspaceRepository.findAllById(List.of())).thenReturn(List.of());
+
+        var responses = workspaceService.getMyWorkspaces();
+
+        assertThat(responses).isEmpty();
     }
 
     @Test
