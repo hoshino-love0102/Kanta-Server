@@ -111,4 +111,11 @@ public class WorkspaceMember {
     public void changeRole(MemberRole role) {
         this.role = role;
     }
+
+    public void accept(String userId, String displayName) {
+        this.userId = userId;
+        this.displayName = displayName;
+        this.status = MemberStatus.ACTIVE;
+        this.joinedAt = Instant.now();
+    }
 }

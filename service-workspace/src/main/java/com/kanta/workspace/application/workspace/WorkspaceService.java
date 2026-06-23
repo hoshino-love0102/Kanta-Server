@@ -19,6 +19,7 @@ import com.kanta.workspace.presentation.workspace.CreateWorkspaceRequest;
 import com.kanta.workspace.presentation.workspace.InviteMemberRequest;
 import com.kanta.workspace.presentation.workspace.InviteMemberResponse;
 import com.kanta.workspace.presentation.workspace.MemberResponse;
+import com.kanta.workspace.presentation.workspace.PendingInvitationResponse;
 import com.kanta.workspace.presentation.workspace.RegisterRepoBoardMappingRequest;
 import com.kanta.workspace.presentation.workspace.RepoBoardMappingResponse;
 import com.kanta.workspace.presentation.workspace.WorkspaceResponse;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -116,6 +118,35 @@ public class WorkspaceService {
         var member = WorkspaceMember.invited(workspaceId, normalizedEmail, request.role());
         workspaceMemberRepository.save(member);
         return new InviteMemberResponse(member.getId(), member.getStatus().name());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PendingInvitationResponse> getMyInvitations() {
+        var email = normalizeEmail(PassportHolder.current().username());
+        var invitations = workspaceMemberRepository.findByEmailAndStatus(email, MemberStatus.INVITED);
+        var workspaces = workspaceRepository.findAllById(invitations.stream().map(WorkspaceMember::getWorkspaceId).toList())
+            .stream()
+            .collect(Collectors.toMap(Workspace::getId, workspace -> workspace));
+
+        return invitations.stream()
+            .filter(invitation -> workspaces.containsKey(invitation.getWorkspaceId()))
+            .map(invitation -> PendingInvitationResponse.from(invitation, workspaces.get(invitation.getWorkspaceId())))
+            .toList();
+    }
+
+    @Transactional
+    public MemberResponse acceptInvitation(UUID workspaceId) {
+        findWorkspace(workspaceId);
+        var passport = PassportHolder.current();
+        var email = normalizeEmail(passport.username());
+
+        var invitation = workspaceMemberRepository.findByWorkspaceIdAndEmailAndStatus(workspaceId, email, MemberStatus.INVITED)
+            .orElseThrow(() -> new NotFoundException("초대를 찾을 수 없습니다.", "INVITATION_NOT_FOUND"));
+
+        invitation.accept(passport.requireUserId(), passport.username());
+        publishMemberUpdated(invitation);
+
+        return MemberResponse.from(invitation);
     }
 
     @Transactional

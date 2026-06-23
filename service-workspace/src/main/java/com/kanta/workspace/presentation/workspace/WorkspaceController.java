@@ -38,6 +38,16 @@ public class WorkspaceController {
         return ApiResponse.ok(workspaceService.getMyWorkspaces());
     }
 
+    @GetMapping("/invitations/me")
+    public ApiResponse<List<PendingInvitationResponse>> getMyInvitations() {
+        return ApiResponse.ok(workspaceService.getMyInvitations());
+    }
+
+    @PostMapping("/{workspaceId}/invitations/accept")
+    public ApiResponse<MemberResponse> acceptInvitation(@PathVariable UUID workspaceId) {
+        return ApiResponse.ok(workspaceService.acceptInvitation(workspaceId));
+    }
+
     @GetMapping("/{workspaceId}/members")
     public ApiResponse<PageResponse<MemberResponse>> getMembers(
         @PathVariable UUID workspaceId,
