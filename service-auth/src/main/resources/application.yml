@@ -48,6 +48,7 @@ kanta:
   internal:
     gateway-secret: ${INTERNAL_GATEWAY_SECRET:change-me-internal-gateway-secret}
   oauth:
+    frontend-redirect-uri: ${OAUTH_FRONTEND_REDIRECT_URI:http://localhost:5173/}
     github:
       client-id: ${GITHUB_CLIENT_ID:}
       client-secret: ${GITHUB_CLIENT_SECRET:}
