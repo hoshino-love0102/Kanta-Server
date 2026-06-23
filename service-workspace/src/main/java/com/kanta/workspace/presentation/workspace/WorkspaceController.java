@@ -5,6 +5,7 @@ import com.kanta.workspace.common.ApiResponse;
 import com.kanta.workspace.common.PageResponse;
 import com.kanta.workspace.infrastructure.security.UserAccess;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,6 +31,11 @@ public class WorkspaceController {
     @PostMapping
     public ResponseEntity<ApiResponse<WorkspaceResponse>> create(@Valid @RequestBody CreateWorkspaceRequest request) {
         return ResponseEntity.status(201).body(ApiResponse.created(workspaceService.create(request)));
+    }
+
+    @GetMapping("/me")
+    public ApiResponse<List<WorkspaceResponse>> getMyWorkspaces() {
+        return ApiResponse.ok(workspaceService.getMyWorkspaces());
     }
 
     @GetMapping("/{workspaceId}/members")

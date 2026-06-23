@@ -3,6 +3,7 @@ package com.kanta.workspace.domain.workspace.repository;
 import com.kanta.workspace.domain.workspace.entity.WorkspaceMember;
 import com.kanta.workspace.domain.workspace.enumeration.MemberRole;
 import com.kanta.workspace.domain.workspace.enumeration.MemberStatus;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMember, UUID> {
     Page<WorkspaceMember> findByWorkspaceIdAndStatus(UUID workspaceId, MemberStatus status, Pageable pageable);
+
+    List<WorkspaceMember> findByUserIdAndStatus(String userId, MemberStatus status);
 
     Optional<WorkspaceMember> findByWorkspaceIdAndEmail(UUID workspaceId, String email);
 

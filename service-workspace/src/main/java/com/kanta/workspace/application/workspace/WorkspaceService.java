@@ -22,6 +22,7 @@ import com.kanta.workspace.presentation.workspace.MemberResponse;
 import com.kanta.workspace.presentation.workspace.RegisterRepoBoardMappingRequest;
 import com.kanta.workspace.presentation.workspace.RepoBoardMappingResponse;
 import com.kanta.workspace.presentation.workspace.WorkspaceResponse;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -77,6 +78,16 @@ public class WorkspaceService {
         publishMemberUpdated(owner);
 
         return WorkspaceResponse.from(workspace);
+    }
+
+    @Transactional(readOnly = true)
+    public List<WorkspaceResponse> getMyWorkspaces() {
+        var passport = PassportHolder.current();
+        var memberships = workspaceMemberRepository.findByUserIdAndStatus(passport.requireUserId(), MemberStatus.ACTIVE);
+        var workspaceIds = memberships.stream().map(WorkspaceMember::getWorkspaceId).toList();
+        return workspaceRepository.findAllById(workspaceIds).stream()
+            .map(WorkspaceResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
