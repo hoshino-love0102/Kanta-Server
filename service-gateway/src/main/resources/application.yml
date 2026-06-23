@@ -84,6 +84,8 @@ kanta:
     kanban-service-url: ${KANBAN_SERVICE_URL:http://service-kanban:8081}
     workspace-service-url: ${WORKSPACE_SERVICE_URL:http://service-workspace:8084}
     internal-secret: ${INTERNAL_GATEWAY_SECRET:change-me-internal-gateway-secret}
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*}
   rate-limit:
     github-webhook:
       per-minute: ${GITHUB_WEBHOOK_RATE_LIMIT_PER_MINUTE:60}
