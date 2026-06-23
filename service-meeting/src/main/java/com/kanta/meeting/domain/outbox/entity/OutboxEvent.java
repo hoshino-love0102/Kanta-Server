@@ -19,6 +19,9 @@ public class OutboxEvent implements Persistable<UUID> {
     @Id
     private UUID id;
 
+    @Column(nullable = false, unique = true)
+    private UUID eventId;
+
     @Column(nullable = false, length = 64)
     private String aggregateType;
 
@@ -50,6 +53,7 @@ public class OutboxEvent implements Persistable<UUID> {
 
     public OutboxEvent(UUID id, String aggregateType, UUID aggregateId, String eventType, String payload) {
         this.id = id;
+        this.eventId = id;
         this.aggregateType = aggregateType;
         this.aggregateId = aggregateId;
         this.eventType = eventType;
@@ -58,6 +62,10 @@ public class OutboxEvent implements Persistable<UUID> {
 
     public UUID getId() {
         return id;
+    }
+
+    public UUID getEventId() {
+        return eventId;
     }
 
     @Override
