@@ -9,6 +9,7 @@ import com.kanta.github.domain.commitlink.CommitSimilarityMatcher;
 import com.kanta.github.domain.commitlink.entity.CommitCardLink;
 import com.kanta.github.domain.commitlink.enumeration.MatchStatus;
 import com.kanta.github.domain.commitlink.repository.CommitCardLinkRepository;
+import com.kanta.github.domain.kanban.KanbanCardClient;
 import com.kanta.github.domain.kanban.KanbanCardFinder;
 import com.kanta.github.domain.webhook.entity.GithubWebhookEvent;
 import com.kanta.github.domain.webhook.repository.GithubWebhookEventRepository;
@@ -36,6 +37,7 @@ public class WebhookIngestService {
     private final WorkspaceRepoResolver workspaceRepoResolver;
     private final KanbanCardFinder kanbanCardFinder;
     private final CommitSimilarityMatcher commitSimilarityMatcher;
+    private final KanbanCardClient kanbanCardClient;
     private final IssueReferenceParser issueReferenceParser;
     private final OutboxEventWriter outboxEventWriter;
     private final ObjectMapper objectMapper;
@@ -47,6 +49,7 @@ public class WebhookIngestService {
         WorkspaceRepoResolver workspaceRepoResolver,
         KanbanCardFinder kanbanCardFinder,
         CommitSimilarityMatcher commitSimilarityMatcher,
+        KanbanCardClient kanbanCardClient,
         IssueReferenceParser issueReferenceParser,
         OutboxEventWriter outboxEventWriter,
         ObjectMapper objectMapper
@@ -57,6 +60,7 @@ public class WebhookIngestService {
         this.workspaceRepoResolver = workspaceRepoResolver;
         this.kanbanCardFinder = kanbanCardFinder;
         this.commitSimilarityMatcher = commitSimilarityMatcher;
+        this.kanbanCardClient = kanbanCardClient;
         this.issueReferenceParser = issueReferenceParser;
         this.outboxEventWriter = outboxEventWriter;
         this.objectMapper = objectMapper;
@@ -128,17 +132,40 @@ public class WebhookIngestService {
         }
 
         var similarityMatch = commitSimilarityMatcher.match(boardId, commitMessage);
-        similarityMatch.ifPresent(scored -> commitCardLinkRepository.save(
-            new CommitCardLink(
-                boardId,
-                commitSha,
-                commitMessage,
-                scored.card().id(),
-                scored.card().title(),
-                scored.score(),
-                MatchStatus.PENDING_CONFIRMATION
-            )
-        ));
+        if (similarityMatch.isPresent()) {
+            var scored = similarityMatch.get();
+            commitCardLinkRepository.save(
+                new CommitCardLink(
+                    boardId,
+                    commitSha,
+                    commitMessage,
+                    scored.card().id(),
+                    scored.card().title(),
+                    scored.score(),
+                    MatchStatus.PENDING_CONFIRMATION
+                )
+            );
+            return;
+        }
+
+        createCardFromUnmatchedCommit(boardId, commitSha, commitMessage);
+    }
+
+    private void createCardFromUnmatchedCommit(UUID boardId, String commitSha, String commitMessage) {
+        var title = toCardTitle(commitMessage);
+        var newCardId = kanbanCardClient.createCard(boardId, title, null, null);
+        var link = commitCardLinkRepository.save(
+            new CommitCardLink(boardId, commitSha, commitMessage, newCardId, title, null, MatchStatus.AUTO_CREATED)
+        );
+        appendCommitMatched(link);
+    }
+
+    private String toCardTitle(String commitMessage) {
+        var firstLine = commitMessage.strip().lines().findFirst().orElse("").strip();
+        if (firstLine.isEmpty()) {
+            firstLine = "GitHub 커밋";
+        }
+        return firstLine.length() > 200 ? firstLine.substring(0, 200) : firstLine;
     }
 
     private void appendDeferredSimilarityMatch(UUID boardId, String commitSha, String commitMessage, String ref) {
