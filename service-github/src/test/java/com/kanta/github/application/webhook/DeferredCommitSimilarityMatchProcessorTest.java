@@ -13,6 +13,7 @@ import com.kanta.github.domain.commitlink.entity.CommitCardLink;
 import com.kanta.github.domain.commitlink.enumeration.MatchStatus;
 import com.kanta.github.domain.commitlink.repository.CommitCardLinkRepository;
 import com.kanta.github.domain.kanban.CardMatch;
+import com.kanta.github.domain.kanban.KanbanCardClient;
 import com.kanta.github.domain.outbox.entity.OutboxEvent;
 import com.kanta.github.domain.outbox.repository.OutboxEventRepository;
 import java.util.List;
@@ -28,6 +29,7 @@ class DeferredCommitSimilarityMatchProcessorTest {
         var outboxEventRepository = org.mockito.Mockito.mock(OutboxEventRepository.class);
         var commitSimilarityMatcher = org.mockito.Mockito.mock(CommitSimilarityMatcher.class);
         var commitCardLinkRepository = org.mockito.Mockito.mock(CommitCardLinkRepository.class);
+        var kanbanCardClient = org.mockito.Mockito.mock(KanbanCardClient.class);
         var boardId = UUID.randomUUID();
         var cardId = UUID.randomUUID();
         var event = new OutboxEvent(
@@ -43,6 +45,7 @@ class DeferredCommitSimilarityMatchProcessorTest {
             outboxEventRepository,
             commitSimilarityMatcher,
             commitCardLinkRepository,
+            kanbanCardClient,
             new ObjectMapper(),
             10
         );
