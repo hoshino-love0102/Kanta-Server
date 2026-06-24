@@ -67,7 +67,7 @@ public class CommitCardLink {
         this.candidateCardTitle = candidateCardTitle;
         this.similarityScore = similarityScore;
         this.matchStatus = matchStatus;
-        if (matchStatus == MatchStatus.AUTO_CONFIRMED) {
+        if (matchStatus == MatchStatus.AUTO_CONFIRMED || matchStatus == MatchStatus.AUTO_CREATED) {
             this.cardId = candidateCardId;
         }
     }
