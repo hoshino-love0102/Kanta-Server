@@ -78,6 +78,12 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: env,health
+
 kanta:
   gateway:
     auth-service-url: ${AUTH_SERVICE_URL:http://service-auth:8083}
