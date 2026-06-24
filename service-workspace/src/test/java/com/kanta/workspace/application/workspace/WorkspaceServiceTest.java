@@ -12,6 +12,7 @@ import com.kanta.workspace.application.outbox.OutboxEventWriter;
 import com.kanta.workspace.common.BadRequestException;
 import com.kanta.workspace.common.ForbiddenException;
 import com.kanta.workspace.common.NotFoundException;
+import com.kanta.workspace.domain.workspace.entity.RepoBoardMapping;
 import com.kanta.workspace.domain.workspace.entity.Workspace;
 import com.kanta.workspace.domain.workspace.entity.WorkspaceMember;
 import com.kanta.workspace.domain.workspace.enumeration.MemberRole;
@@ -361,5 +362,106 @@ class WorkspaceServiceTest {
 
         verify(workspaceMemberRepository).delete(targetMember);
         verify(outboxEventWriter).append(any(), any(), any(), any());
+    }
+
+    @Test
+    void rename_OWNER_또는_ADMIN은_워크스페이스_이름을_변경할_수_있다() {
+        var actingOwner = member(MemberRole.OWNER, MemberStatus.ACTIVE);
+        actingAs(actingOwner.getUserId());
+        when(workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, actingOwner.getUserId()))
+            .thenReturn(Optional.of(actingOwner));
+
+        var response = workspaceService.rename(workspaceId, "새 이름");
+
+        assertThat(response.name()).isEqualTo("새 이름");
+    }
+
+    @Test
+    void rename_일반_멤버는_이름을_변경할_수_없다() {
+        var actingMember = member(MemberRole.MEMBER, MemberStatus.ACTIVE);
+        setUserId(actingMember, "member-1");
+        actingAs("member-1");
+        when(workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, "member-1"))
+            .thenReturn(Optional.of(actingMember));
+
+        assertThatThrownBy(() -> workspaceService.rename(workspaceId, "새 이름"))
+            .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void delete_OWNER는_워크스페이스를_삭제할_수_있다() {
+        var actingOwner = member(MemberRole.OWNER, MemberStatus.ACTIVE);
+        actingAs(actingOwner.getUserId());
+        when(workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, actingOwner.getUserId()))
+            .thenReturn(Optional.of(actingOwner));
+
+        workspaceService.delete(workspaceId);
+
+        verify(repoBoardMappingRepository).deleteByWorkspaceId(workspaceId);
+        verify(workspaceMemberRepository).deleteByWorkspaceId(workspaceId);
+        verify(workspaceRepository).deleteById(workspaceId);
+    }
+
+    @Test
+    void delete_ADMIN은_워크스페이스를_삭제할_수_없다() {
+        var actingAdmin = member(MemberRole.ADMIN, MemberStatus.ACTIVE);
+        setUserId(actingAdmin, "admin-1");
+        actingAs("admin-1");
+        when(workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, "admin-1"))
+            .thenReturn(Optional.of(actingAdmin));
+
+        assertThatThrownBy(() -> workspaceService.delete(workspaceId))
+            .isInstanceOf(ForbiddenException.class);
+
+        verify(workspaceRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void getRepoBoardMappings_워크스페이스_멤버는_매핑_목록을_조회할_수_있다() {
+        var actingMember = member(MemberRole.MEMBER, MemberStatus.ACTIVE);
+        setUserId(actingMember, "member-1");
+        actingAs("member-1");
+        when(workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, "member-1"))
+            .thenReturn(Optional.of(actingMember));
+        var mapping = new RepoBoardMapping(workspaceId, "Team-B1ND/kanta-server", UUID.randomUUID());
+        when(repoBoardMappingRepository.findByWorkspaceId(workspaceId)).thenReturn(List.of(mapping));
+
+        var responses = workspaceService.getRepoBoardMappings(workspaceId);
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).githubRepo()).isEqualTo("Team-B1ND/kanta-server");
+    }
+
+    @Test
+    void deleteRepoBoardMapping_매니저는_매핑을_삭제할_수_있다() {
+        var actingOwner = member(MemberRole.OWNER, MemberStatus.ACTIVE);
+        actingAs(actingOwner.getUserId());
+        when(workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, actingOwner.getUserId()))
+            .thenReturn(Optional.of(actingOwner));
+        var mapping = new RepoBoardMapping(workspaceId, "Team-B1ND/kanta-server", UUID.randomUUID());
+        var mappingId = UUID.randomUUID();
+        setField(mapping, "id", mappingId);
+        when(repoBoardMappingRepository.findById(mappingId)).thenReturn(Optional.of(mapping));
+
+        workspaceService.deleteRepoBoardMapping(workspaceId, mappingId);
+
+        verify(repoBoardMappingRepository).delete(mapping);
+    }
+
+    @Test
+    void deleteRepoBoardMapping_다른_워크스페이스_매핑이면_NotFound() {
+        var actingOwner = member(MemberRole.OWNER, MemberStatus.ACTIVE);
+        actingAs(actingOwner.getUserId());
+        when(workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, actingOwner.getUserId()))
+            .thenReturn(Optional.of(actingOwner));
+        var otherWorkspaceMapping = new RepoBoardMapping(UUID.randomUUID(), "Team-B1ND/other-repo", UUID.randomUUID());
+        var mappingId = UUID.randomUUID();
+        setField(otherWorkspaceMapping, "id", mappingId);
+        when(repoBoardMappingRepository.findById(mappingId)).thenReturn(Optional.of(otherWorkspaceMapping));
+
+        assertThatThrownBy(() -> workspaceService.deleteRepoBoardMapping(workspaceId, mappingId))
+            .isInstanceOf(NotFoundException.class);
+
+        verify(repoBoardMappingRepository, never()).delete(any());
     }
 }
