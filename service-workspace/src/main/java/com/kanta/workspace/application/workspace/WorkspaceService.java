@@ -70,6 +70,25 @@ public class WorkspaceService {
         return RepoBoardMappingResponse.from(mapping);
     }
 
+    @Transactional(readOnly = true)
+    public List<RepoBoardMappingResponse> getRepoBoardMappings(UUID workspaceId) {
+        requireActiveMember(workspaceId);
+        return repoBoardMappingRepository.findByWorkspaceId(workspaceId).stream()
+            .map(RepoBoardMappingResponse::from)
+            .toList();
+    }
+
+    @Transactional
+    public void deleteRepoBoardMapping(UUID workspaceId, UUID mappingId) {
+        requireManager(workspaceId);
+        var mapping = repoBoardMappingRepository.findById(mappingId)
+            .orElseThrow(() -> new NotFoundException("repo-board 매핑을 찾을 수 없습니다.", "REPO_MAPPING_NOT_FOUND"));
+        if (!mapping.getWorkspaceId().equals(workspaceId)) {
+            throw new NotFoundException("repo-board 매핑을 찾을 수 없습니다.", "REPO_MAPPING_NOT_FOUND");
+        }
+        repoBoardMappingRepository.delete(mapping);
+    }
+
     @Transactional
     public WorkspaceResponse create(CreateWorkspaceRequest request) {
         var workspace = workspaceRepository.save(new Workspace(request.name().trim(), request.githubOrg()));
@@ -80,6 +99,27 @@ public class WorkspaceService {
         publishMemberUpdated(owner);
 
         return WorkspaceResponse.from(workspace);
+    }
+
+    @Transactional
+    public WorkspaceResponse rename(UUID workspaceId, String name) {
+        requireManager(workspaceId);
+        var workspace = findWorkspace(workspaceId);
+        workspace.rename(name.trim());
+        return WorkspaceResponse.from(workspace);
+    }
+
+    @Transactional
+    public void delete(UUID workspaceId) {
+        var actingMember = requireActiveMember(workspaceId);
+        if (actingMember.getRole() != MemberRole.OWNER) {
+            throw new ForbiddenException("OWNER만 워크스페이스를 삭제할 수 있습니다.", "INSUFFICIENT_ROLE");
+        }
+        findWorkspace(workspaceId);
+
+        repoBoardMappingRepository.deleteByWorkspaceId(workspaceId);
+        workspaceMemberRepository.deleteByWorkspaceId(workspaceId);
+        workspaceRepository.deleteById(workspaceId);
     }
 
     @Transactional(readOnly = true)

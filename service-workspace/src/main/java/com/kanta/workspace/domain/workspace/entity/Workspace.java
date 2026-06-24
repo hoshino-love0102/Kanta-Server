@@ -48,4 +48,8 @@ public class Workspace {
     public Instant getCreatedAt() {
         return createdAt;
     }
+
+    public void rename(String name) {
+        this.name = name;
+    }
 }

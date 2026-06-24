@@ -48,6 +48,20 @@ public class WorkspaceController {
         return ApiResponse.ok(workspaceService.acceptInvitation(workspaceId));
     }
 
+    @PatchMapping("/{workspaceId}")
+    public ApiResponse<WorkspaceResponse> rename(
+        @PathVariable UUID workspaceId,
+        @Valid @RequestBody RenameWorkspaceRequest request
+    ) {
+        return ApiResponse.ok(workspaceService.rename(workspaceId, request.name()));
+    }
+
+    @DeleteMapping("/{workspaceId}")
+    public ResponseEntity<Void> delete(@PathVariable UUID workspaceId) {
+        workspaceService.delete(workspaceId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{workspaceId}/members")
     public ApiResponse<PageResponse<MemberResponse>> getMembers(
         @PathVariable UUID workspaceId,
@@ -86,5 +100,16 @@ public class WorkspaceController {
         @Valid @RequestBody RegisterRepoBoardMappingRequest request
     ) {
         return ResponseEntity.status(201).body(ApiResponse.created(workspaceService.registerRepoBoardMapping(workspaceId, request)));
+    }
+
+    @GetMapping("/{workspaceId}/repo-mappings")
+    public ApiResponse<List<RepoBoardMappingResponse>> getRepoBoardMappings(@PathVariable UUID workspaceId) {
+        return ApiResponse.ok(workspaceService.getRepoBoardMappings(workspaceId));
+    }
+
+    @DeleteMapping("/{workspaceId}/repo-mappings/{mappingId}")
+    public ResponseEntity<Void> deleteRepoBoardMapping(@PathVariable UUID workspaceId, @PathVariable UUID mappingId) {
+        workspaceService.deleteRepoBoardMapping(workspaceId, mappingId);
+        return ResponseEntity.noContent().build();
     }
 }
