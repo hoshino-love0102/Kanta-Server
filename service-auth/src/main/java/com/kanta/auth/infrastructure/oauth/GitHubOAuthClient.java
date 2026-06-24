@@ -72,7 +72,8 @@ public class GitHubOAuthClient implements OAuthProviderClient {
 
         var providerUserId = String.valueOf(userResponse.get("id"));
         var email = fetchVerifiedPrimaryEmail(accessToken);
-        var displayName = (String) userResponse.getOrDefault("name", userResponse.get("login"));
+        var name = (String) userResponse.get("name");
+        var displayName = (name != null) ? name : (String) userResponse.get("login");
 
         return new OAuthProviderProfile(providerUserId, email, displayName);
     }
